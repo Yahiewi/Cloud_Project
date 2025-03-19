@@ -8,9 +8,9 @@ export PGPASSWORD="${POSTGRES_PASSWORD:-}"
 
 args=(
 	# force postgres to not use the local unix socket (test "external" connectibility)
-	--host "$host"
-	--username "$user"
-	--dbname "$db"
+	--host "postgres"
+	--username "postgres"
+	--dbname "postgres"
 	--quiet --no-align --tuples-only
 )
 

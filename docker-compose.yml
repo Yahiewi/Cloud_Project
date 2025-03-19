@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  vote1:
+    build:
+      context: ./vote
+    ports:
+      - "5001:5000"
+    networks:
+      - front-net
+      - back-net
+    depends_on:
+      - redis
+      - result
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+      
+
+  vote2:
+    build:
+      context: ./vote
+    ports:
+      - "5002:5000"
+    networks:
+      - front-net
+      - back-net
+    depends_on:
+      - redis
+      - result
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+
+  vote3:
+    build:
+      context: ./vote
+    ports:
+      - "5003:5000"
+    networks:
+      - front-net
+      - back-net
+    depends_on:
+      - redis
+      - result
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+
+
+
+  redis:
+    image: "redis:alpine"
+    volumes:
+      - ./healthchecks:/healthchecks
+    healthcheck:
+      test: ["CMD", "sh", "/healthchecks/redis.sh"]
+      interval: 2s
+      timeout: 10s
+      retries: 2
+    networks:
+      - back-net
+
+
+  result:
+    build :
+      context : ./result
+    networks:
+      - front-net
+      - back-net
+    depends_on:
+      - db
+
+
+
+  worker:
+    build: ./worker
+    networks:
+      - back-net
+    depends_on :
+      - redis
+      - db
+      
+
+
+  db:
+    image: "postgres:15-alpine"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./healthchecks:/healthchecks
+    healthcheck:
+      test: ["CMD", "sh", "/healthchecks/postgres.sh"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    networks:
+      - back-net
+
+
+  seed-data:
+    build:
+      context: ./seed-data
+    networks:
+      - front-net
+    depends_on:
+      - db
+      - nginx 
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - vote1
+      - vote2
+      - vote3
+      - result
+    networks:
+      - front-net
+      - back-net
+
+networks:
+  front-net:
+  back-net:
+
+volumes:
+  db-data:
